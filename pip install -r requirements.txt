@@ -1,1 +1,8 @@
-pip --upgrade
+pip==26.1.2
+streamlit==1.42.0
+pandas==2.2.3
+numpy==2.2.0
+matplotlib==3.10.0
+plotly==6.0.0
+requests==2.32.3
+python-dotenv==1.0.1
