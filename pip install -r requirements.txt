@@ -1,1 +1,2 @@
-streamlit
+pip install --upgrade pip
+pip streamlit
