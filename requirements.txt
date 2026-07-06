@@ -1,5 +1,4 @@
 google-generativeai
-pip --upgrade
 streamlit
 pip==26.1.2
 streamlit==1.42.0
