@@ -1,311 +1,171 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 import plotly.express as px
+import google.generativeai as genai
+import os
+import random
 
-# Page config
-st.set_page_config(
-    page_title="Research Insight Hub",
-    page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
+# ==========================================
+# 1. TETAPAN HALAMAN (Gaya Kalodata - Wide)
+# ==========================================
+st.set_page_config(page_title="ResearchInsight Hub", page_icon="📈", layout="wide")
 
-# Custom CSS
-st.markdown(
-    """
-    <style>
-    .main {
-        padding: 0rem 0rem;
-    }
-    .metric-card {
-        background-color: #f0f2f6;
-        padding: 20px;
-        border-radius: 10px;
-        margin: 10px 0;
-    }
-    .badge {
-        display: inline-block;
-        background-color: #eef2ff;
-        color: #0b2b68;
-        padding: 4px 8px;
-        border-radius: 8px;
-        font-size: 0.85rem;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+# ==========================================
+# 2. KONFIGURASI GEMINI AI
+# ==========================================
+gemini_api_key = os.environ.get("GEMINI_API_KEY")
+if gemini_api_key:
+    genai.configure(api_key=gemini_api_key)
 
-# ---------- Helpers / Cached data ----------
+# ==========================================
+# 3. JANAAN DATA SIMULASI (Dummy Data)
+# ==========================================
+# Kita jana data secara automatik untuk memudahkan anda menguji UI
 @st.cache_data
-def generate_trend_data(seed: int = 42) -> pd.DataFrame:
-    np.random.seed(seed)
-    dates = pd.date_range(start="2024-01-01", periods=12, freq="M")
-    return pd.DataFrame(
-        {
-            "Bulan": dates,
-            "Penelitian": np.random.randint(10, 50, size=12),
-            "Publikasi": np.random.randint(5, 30, size=12),
-        }
-    )
-
-
-@st.cache_data
-def get_sample_research() -> pd.DataFrame:
-    penelitian = [
-        {
-            "judul": "Machine Learning untuk Analisis Genomik",
-            "peneliti": "Dr. Ahmad Rizki",
-            "kategori": "AI/ML",
-            "tahun": 2024,
-            "sitasi": 125,
-            "deskripsi": "Penelitian tentang aplikasi machine learning dalam analisis data genomik",
-        },
-        {
-            "judul": "Dampak Perubahan Iklim pada Ekosistem Laut",
-            "peneliti": "Dr. Siti Nurhaliza",
-            "kategori": "Biologi",
-            "tahun": 2023,
-            "sitasi": 87,
-            "deskripsi": "Studi longitudinal mengenai pengaruh perubahan iklim terhadap kehidupan laut",
-        },
-        {
-            "judul": "Material Polimer Biodegradable Berkelanjutan",
-            "peneliti": "Prof. Budi Santoso",
-            "kategori": "Kimia",
-            "tahun": 2024,
-            "sitasi": 56,
-            "deskripsi": "Pengembangan material polimer yang ramah lingkungan dan dapat terurai",
-        },
-    ]
-    return pd.DataFrame(penelitian)
-
-
-# Sidebar
-st.sidebar.title("🔍 Research Insight Hub")
-page = st.sidebar.radio(
-    "Pilih Halaman:",
-    ["🏠 Dashboard", "📈 Analisis", "📚 Penelitian", "⚙️ Pengaturan"],
-)
-st.sidebar.markdown("---")
-st.sidebar.info("📌 Aplikasi untuk analisis dan visualisasi data penelitian")
-
-# ==================== HALAMAN DASHBOARD ====================
-if page == "🏠 Dashboard":
-    st.title("📊 Dashboard Utama")
-
-    col1, col2, col3, col4 = st.columns(4)
-
-    with col1:
-        st.metric(label="Total Penelitian", value="245", delta="+12 minggu ini")
-
-    with col2:
-        st.metric(label="Peneliti Aktif", value="87", delta="+5 baru")
-
-    with col3:
-        st.metric(label="Publikasi", value="156", delta="+23 bulan ini")
-
-    with col4:
-        st.metric(label="Skor Rata-rata", value="8.5/10", delta="+0.3")
-
-    st.markdown("---")
-
-    # Row 1: Charts
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("📈 Tren Penelitian")
-        trend_data = generate_trend_data()
-        fig = px.line(
-            trend_data,
-            x="Bulan",
-            y=["Penelitian", "Publikasi"],
-            markers=True,
-            title="Tren Penelitian 12 Bulan Terakhir",
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        st.subheader("🎯 Distribusi Kategori")
-        categories = pd.DataFrame(
-            {
-                "Kategori": ["AI/ML", "Biologi", "Fisika", "Kimia", "Lainnya"],
-                "Jumlah": [45, 38, 32, 28, 102],
-            }
-        )
-        fig2 = px.pie(
-            categories, names="Kategori", values="Jumlah", title="Distribusi Penelitian per Kategori"
-        )
-        st.plotly_chart(fig2, use_container_width=True)
-
-    st.markdown("---")
-
-    # Row 2: Recent publications
-    st.subheader("📚 Publikasi Terbaru")
-    recent_data = {
-        "Judul": [
-            "Aplikasi Machine Learning dalam Diagnosa Medis",
-            "Analisis Perubahan Iklim Global",
-            "Inovasi Material Berkelanjutan",
+def load_data():
+    data = {
+        "Tajuk_Video": [
+            "Cara Guna AI Untuk Assignment", "Bahaya Scam Telegram", 
+            "Apa Itu Literasi Digital?", "Excel Hacks untuk Pelajar", 
+            "Cara Buat Password Kuat", "Kenapa Kena Verify Akaun?",
+            "Edit Video Pakai CapCut AI", "Jaga Privasi di TikTok"
         ],
-        "Peneliti": ["Dr. Ahmad", "Dr. Siti", "Prof. Budi"],
-        "Kategori": ["AI/ML", "Biologi", "Kimia"],
-        "Tanggal": ["2024-06-15", "2024-06-12", "2024-06-10"],
-        "Sitas": [45, 23, 18],
+        "Kategori": ["Pendidikan AI", "Keselamatan Siber", "Asas Digital", "Pendidikan AI", "Keselamatan Siber", "Asas Digital", "Pendidikan AI", "Keselamatan Siber"],
+        "Gaya_Penyampaian": ["Impromptu", "Formal", "Impromptu", "Formal", "Impromptu", "Formal", "Impromptu", "Impromptu"],
+        "Views": [120000, 85000, 45000, 210000, 150000, 30000, 320000, 95000],
+        "Likes": [15000, 8000, 3000, 25000, 18000, 2000, 45000, 12000],
+        "Comments": [450, 800, 150, 600, 1200, 100, 1500, 500],
+        "Shares": [1200, 3000, 200, 4000, 5000, 150, 8000, 1100]
     }
-    df_recent = pd.DataFrame(recent_data)
-    st.dataframe(df_recent, use_container_width=True)
+    df = pd.DataFrame(data)
+    # Kira Engagement Rate = ((Likes + Comments + Shares) / Views) * 100
+    df["Engagement_Rate_%"] = round(((df["Likes"] + df["Comments"] + df["Shares"]) / df["Views"]) * 100, 2)
+    return df
 
+df = load_data()
 
-# ==================== HALAMAN ANALISIS ====================
-elif page == "📈 Analisis":
-    st.title("📊 Analisis Mendalam")
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.subheader("Filter Data")
-
-    with col2:
-        if st.button("🔄 Refresh"):
-            st.success("Data diperbarui!")
-
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        kategori = st.multiselect(
-            "Kategori Penelitian",
-            ["AI/ML", "Biologi", "Fisika", "Kimia", "Lainnya"],
-            default=["AI/ML", "Biologi"],
-        )
-
-    with col2:
-        tahun_range = st.slider("Tahun", 2020, 2024, (2022, 2024))
-
-    with col3:
-        min_sitas = st.number_input("Min. Sitasi", 0, 1000, 0)
-
-    st.markdown("---")
-
-    # Analysis charts
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.subheader("📊 Produktivitas Peneliti")
-        researchers = (
-            pd.DataFrame(
-                {
-                    "Peneliti": ["Dr. Ahmad", "Dr. Siti", "Prof. Budi", "Dr. Eka", "Dr. Farid"],
-                    "Publikasi": [15, 12, 18, 9, 14],
-                }
-            )
-            .sort_values("Publikasi", ascending=True)
-        )
-        fig = px.bar(researchers, x="Publikasi", y="Peneliti", orientation="h", color="Publikasi")
-        st.plotly_chart(fig, use_container_width=True)
-
-    with col2:
-        st.subheader("📈 Pengaruh Penelitian")
-        impact = pd.DataFrame(
-            {"Penelitian": ["Penelitian A", "Penelitian B", "Penelitian C", "Penelitian D"], "h-index": [25, 18, 22, 15]}
-        )
-        fig = px.bar(impact, x="Penelitian", y="h-index", color="h-index")
-        st.plotly_chart(fig, use_container_width=True)
-
-
-# ==================== HALAMAN PENELITIAN ====================
-elif page == "📚 Penelitian":
-    st.title("🔬 Daftar Penelitian")
-
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        search = st.text_input("🔍 Cari penelitian...")
-    with col2:
-        sort_by = st.selectbox("Urutkan", ["Terbaru", "Paling Dikutip", "Judul A-Z"])
-
-    st.markdown("---")
-
-    df_penelitian = get_sample_research()
-
-    # Filter by search
-    if search:
-        mask = (
-            df_penelitian["judul"].str.contains(search, case=False, na=False)
-            | df_penelitian["deskripsi"].str.contains(search, case=False, na=False)
-            | df_penelitian["peneliti"].str.contains(search, case=False, na=False)
-        )
-        df_penelitian = df_penelitian[mask]
-
-    # Apply sorting
-    if sort_by == "Terbaru":
-        df_penelitian = df_penelitian.sort_values("tahun", ascending=False)
-    elif sort_by == "Paling Dikutip":
-        df_penelitian = df_penelitian.sort_values("sitasi", ascending=False)
-    else:
-        df_penelitian = df_penelitian.sort_values("judul", ascending=True)
-
-    # Display entries
-    for idx, row in df_penelitian.reset_index(drop=True).iterrows():
-        with st.expander(f"{row['judul']} — {row['peneliti']} ({row['tahun']})"):
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.write(row["deskripsi"])
-                st.markdown(f"<span class='badge'>{row['kategori']}</span>", unsafe_allow_html=True)
-                st.write("")  # spacing
-                st.metric(label="Sitasi", value=int(row["sitasi"]))
-            with col2:
-                if st.button("📖 Baca", key=f"read_{idx}"):
-                    st.info(f"Membuka detail untuk: {row['judul']}")
-                if st.button("⭐ Simpan", key=f"save_{idx}"):
-                    st.success(f"'{row['judul']}' disimpan ke daftar Anda")
-
-
-# ==================== HALAMAN PENGATURAN ====================
-elif page == "⚙️ Pengaturan":
-    st.title("⚙️ Pengaturan")
-
-    st.subheader("👤 Profil Pengguna")
-    col1, col2 = st.columns(2)
-    with col1:
-        nama = st.text_input("Nama", "John Doe")
-        email = st.text_input("Email", "john@example.com")
-        institusi = st.text_input("Institusi", "Universitas Indonesia")
-    with col2:
-        spesialisasi = st.multiselect("Spesialisasi", ["AI/ML", "Biologi", "Fisika", "Kimia"], default=["AI/ML"])
-        bio = st.text_area("Bio Singkat", "Masukkan biografi singkat Anda")
-
-    st.markdown("---")
-
-    st.subheader("🔔 Notifikasi")
-    col1, col2 = st.columns(2)
-    with col1:
-        notif_email = st.checkbox("Notifikasi Email", value=True)
-        notif_update = st.checkbox("Update Penelitian Terbaru", value=True)
-    with col2:
-        notif_rekom = st.checkbox("Rekomendasi Penelitian", value=False)
-        notif_laporan = st.checkbox("Laporan Mingguan", value=True)
-
-    st.markdown("---")
-
-    st.subheader("🎨 Tampilan")
-    tema = st.radio("Tema", ["Terang", "Gelap", "Otomatis"], index=2)
-
-    st.markdown("---")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("💾 Simpan Perubahan"):
-            st.success("Pengaturan berhasil disimpan!")
-    with col2:
-        if st.button("🔄 Reset ke Default"):
-            st.warning("Pengaturan direset ke default")
-
-# Footer
+# ==========================================
+# 4. BAHAGIAN ATAS: HEADER & PENAPIS (FILTERS)
+# ==========================================
+st.title("📈 ResearchInsight Hub - TikTok Analytics")
+st.markdown("Menganalisis Impak Video Pendidikan & Literasi Digital Komuniti")
 st.markdown("---")
-st.markdown(
-    """
-    <div style='text-align: center'>
-    <p>© 2024 Research Insight Hub | Dibuat dengan ❤️ menggunakan Streamlit</p>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+
+st.subheader("🔍 Penapis Pasaran (Market Filters)")
+col_f1, col_f2, col_f3 = st.columns(3)
+
+with col_f1:
+    filter_kategori = st.selectbox("Pilih Kategori Topik:", ["Semua"] + list(df["Kategori"].unique()))
+with col_f2:
+    filter_gaya = st.selectbox("Gaya Penyampaian:", ["Semua"] + list(df["Gaya_Penyampaian"].unique()))
+with col_f3:
+    susunan = st.radio("Susun Berdasarkan:", ["Views Tertinggi", "Engagement Tertinggi"], horizontal=True)
+
+# Logik Penapisan Data
+df_filtered = df.copy()
+if filter_kategori != "Semua":
+    df_filtered = df_filtered[df_filtered["Kategori"] == filter_kategori]
+if filter_gaya != "Semua":
+    df_filtered = df_filtered[df_filtered["Gaya_Penyampaian"] == filter_gaya]
+
+if susunan == "Views Tertinggi":
+    df_filtered = df_filtered.sort_values(by="Views", ascending=False)
+else:
+    df_filtered = df_filtered.sort_values(by="Engagement_Rate_%", ascending=False)
+
+st.markdown("---")
+
+# ==========================================
+# 5. KAD KPI UTAMA (GAYA KALODATA)
+# ==========================================
+total_views = df_filtered["Views"].sum()
+avg_engagement = round(df_filtered["Engagement_Rate_%"].mean(), 2)
+total_shares = df_filtered["Shares"].sum()
+top_video = df_filtered.iloc[0]["Tajuk_Video"] if not df_filtered.empty else "Tiada Data"
+
+col1, col2, col3, col4 = st.columns(4)
+with col1:
+    st.metric(label="👁️ Jumlah Keseluruhan Views", value=f"{total_views:,}")
+with col2:
+    st.metric(label="💬 Purata Engagement Rate", value=f"{avg_engagement}%")
+with col3:
+    st.metric(label="🚀 Jumlah Perkongsian (Virality)", value=f"{total_shares:,}")
+with col4:
+    st.metric(label="🏆 Video Paling Berprestasi", value=top_video)
+
+st.markdown("---")
+
+# ==========================================
+# 6. STRUKTUR MAKLUMAT (TABS)
+# ==========================================
+tab1, tab2, tab3 = st.tabs(["📊 Ringkasan Kandungan", "🧑‍🏫 Analisis Gaya Penyampaian", "🤖 Kalodata AI Assistant"])
+
+# --- TAB 1: RINGKASAN KANDUNGAN ---
+with tab1:
+    st.subheader("Top Video Mengikut Capaian (Reach)")
+    col_chart1, col_table1 = st.columns([6, 4]) # Pecahan saiz lajur 60% dan 40%
+    
+    with col_chart1:
+        # Carta Bar Melintang yang dibaiki
+        fig_views = px.bar(
+            df_filtered, 
+            x='Views', 
+            y='Tajuk_Video', 
+            orientation='h',
+            color='Engagement_Rate_%',
+            color_continuous_scale='Blues',
+            title="Prestasi Tontonan Video"
+        )
+        fig_views.update_layout(yaxis={'categoryorder':'total ascending'}) # Susun graf dari bawah ke atas
+        st.plotly_chart(fig_views, use_container_width=True)
+        
+    with col_table1:
+        st.dataframe(df_filtered[["Tajuk_Video", "Kategori", "Views", "Engagement_Rate_%"]], use_container_width=True, hide_index=True)
+
+# --- TAB 2: ANALISIS PENCIPTA & GAYA ---
+with tab2:
+    st.subheader("Impak Gaya Penyampaian terhadap Keterlibatan (Engagement)")
+    
+    # Carta Pie untuk melihat perkongsian metrik
+    fig_pie = px.pie(
+        df_filtered, 
+        names='Gaya_Penyampaian', 
+        values='Views', 
+        hole=0.4, 
+        title="Sumbangan Tontonan Mengikut Gaya Video",
+        color_discrete_sequence=['#ff9999','#66b3ff']
+    )
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+# --- TAB 3: AI INSIGHTS (GEMINI) ---
+with tab3:
+    st.subheader("🧠 ResearchInsight AI Market Consultant")
+    st.info("AI akan menganalisis data semasa di dashboard ini dan memberikan strategi kandungan yang boleh terus digunakan (Actionable Insights) persis penganalisis Kalodata.")
+    
+    if st.button("Jana Laporan Strategi AI", type="primary"):
+        if not gemini_api_key:
+            st.error("Ralat: GEMINI_API_KEY tidak dijumpai dalam sistem. Sila tetapkan di platform hosting anda.")
+        else:
+            with st.spinner("AI sedang mengkaji metrik dan merangka strategi..."):
+                # Tukar data ringkas kepada bentuk teks
+                data_string = df_filtered[["Tajuk_Video", "Kategori", "Gaya_Penyampaian", "Views", "Engagement_Rate_%"]].to_string()
+                
+                prompt = f"""
+                Anda adalah 'ResearchInsight AI', seorang pakar data analitik tahap tinggi seperti sistem Kalodata, khusus untuk pasaran TikTok.
+                Berikut adalah data metrik prestasi video pendek tentang literasi digital:
+                
+                {data_string}
+                
+                Tugas anda:
+                1. Buat rumusan eksekutif ringkas mengenai trend yang berjaya (gaya penyampaian mana yang paling mendapat sambutan).
+                2. Berikan 3 cadangan tajuk video baru (Actionable Strategy) yang patut dicipta seterusnya berdasarkan apa yang trending di atas.
+                3. Gunakan nada profesional, yakin, dan tepat (seperti penganalisis data korporat).
+                """
+                
+                try:
+                    model = genai.GenerativeModel('gemini-1.5-flash')
+                    response = model.generate_content(prompt)
+                    st.success("Analisis Pasaran Berjaya Dijana!")
+                    st.markdown(response.text)
+                except Exception as e:
+                    st.error(f"Berlaku ralat semasa menghubungi Gemini AI: {e}")
